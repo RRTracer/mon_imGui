@@ -2,11 +2,11 @@
 
 ## Introduction :
 
-    Dans ce Git, je vais placer mon code , mon MakeFile, mes documentations, qui me sont nécessaire dans le cours.
+Dans ce Git, je vais placer mon code , mon MakeFile, mes documentations, qui me sont nécessaire dans le cours.
 
-    En gros le cours a pour but de nous faire apprendre et initer à ImGui , une interface graphique puissante qui nous sera utile surement en projet.
+En gros le cours a pour but de nous faire apprendre et initer à ImGui , une interface graphique puissante qui nous sera utile surement en projet.
 
-    Je ne suis pas dévellopeur mais juste étudiant qui essaye d'apprendre aussi de mon coter.
+Je ne suis pas dévellopeur mais juste étudiant qui essaye d'apprendre aussi de mon coter.
 
 ## Explication de mon MakeFile
 
