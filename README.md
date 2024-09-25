@@ -85,3 +85,20 @@ En gros j'y vais étape par étape afin de au final créé une interface graphiq
 Arès je voudrais pouvoir integrer un terminal dedans afin d'au final créé un ide parfait pour l'education et l'étude du BUS série.
 
 
+
+
+## License et droits d'utilisation
+
+Ce dépôt contient des documents qui, sauf mention explicite, sont sous [Licence Creative-Commons by-sa](https://creativecommons.org/licenses/by-sa/2.0/fr/) qui est une licence libre et très permissive.
+
+
+Cela signifie que vous pouvez télécharger, utiliser tout ou partie, modifier, partager ces documents à votre guise.
+
+
+En contrepartie, cela implique que si vous les utilisez, vous devrez :
+
+
+      les partager sous une licence au moins équivalente (libre)
+
+
+      marquer le nom de l'auteur de manière explicite.
