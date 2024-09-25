@@ -166,6 +166,10 @@ int main(int, char**)
                 samples_3[n] = cos(n * 0.3f + ImGui::GetTime() * 1.5f);
             ImGui::PlotLines("Test de 10", samples_3, 10);
             
+            float floccari[182];
+            for (int i = 0; i<182; i++)
+                floccari[i] = sinf(i * 0.3f + ImGui::GetTime() * 1.8f);
+            ImGui::PlotLines("Test de 182 par sinus", floccari, 182);
          
             ImGui::End();
         }
