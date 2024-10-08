@@ -182,12 +182,47 @@ int main(int, char**)
             if (clicked & 1)
             {
                 ImGui::SameLine();
-                ImGui::Text("Merci d'avoir utilisé mon logiciel");
-                my_tool = false;
+                ImGui::OpenPopup("Delete?");
+                
             }
+            
+            if (ImGui::BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Text("You are going to close the window ! Are you sure ? ");
+                ImGui::Separator();
 
+                //static int unused_i =
+                //ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
+
+                static bool dont_ask_me_next_time = false;
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+                ImGui::Checkbox("Don't ask me next time", &dont_ask_me_next_time);
+                ImGui::PopStyleVar();
+
+                if (ImGui::Button("OK", ImVec2(120, 0))) 
+                { 
+                    ImGui::Text("Merci d'avoir utilisé mon logiciel");
+                    my_tool = false;
+                    ImGui::CloseCurrentPopup(); 
+                    
+                }
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+                
+                if (ImGui::Button("Cancel", ImVec2(120, 0))) 
+                {
+                    my_tool = false;
+                    ImGui::CloseCurrentPopup(); 
+                    
+
+                }
+                
+                ImGui::EndPopup();
+            }
             ImGui::End();
         }
+
+        
 
         // Rendering
         ImGui::Render();
