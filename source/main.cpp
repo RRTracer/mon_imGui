@@ -7,6 +7,7 @@
 #include <cmath>
 #include <stdio.h>
 #include <SDL.h>
+#include "stb_image.h"
 
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
@@ -18,12 +19,33 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
+// Function to create texture
+GLuint create_texture(const char* image_path, int* width, int* height) {
+    unsigned char* data = stbi_load(image_path, width, height, nullptr, 4); // Charge l'image avec alpha
+    if (!data) {
+        printf("Failed to load texture: %s\n", stbi_failure_reason());
+        return 0;
+    }
+
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    // Remplir la texture avec l'image chargée
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, *width, *height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    stbi_image_free(data); // Libérer la mémoire de l'image
+    return texture_id;
+}
+
 // Main code
-int main(int, char**)
-{
+int main(int, char**) {
     // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
         return -1;
     }
@@ -61,8 +83,7 @@ int main(int, char**)
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
 
-    if (window == nullptr)
-    {
+    if (window == nullptr) {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
         return -1;
     }
@@ -76,7 +97,7 @@ int main(int, char**)
     ImGui::CreateContext();
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark(); // Utilisez un style par défaut, vous pouvez changer cela si nécessaire
+    ImGui::StyleColorsDark(); // Utilisez un style par défaut
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
@@ -85,6 +106,11 @@ int main(int, char**)
     // Tool activation flags
     bool my_tool_active = true;
     bool my_tool = true;
+    const char* image_path = "chat.jpeg"; // Chemin vers votre image
+    int image_width = 0;        // Largeur de l'image
+    int image_height = 0;       // Hauteur de l'image
+    GLuint texture_id = create_texture(image_path, &image_width, &image_height); // Créer une texture à partir de l'image
+    bool show_image = false; // Contrôle pour afficher l'image
 
     // Variables for resource usage
     int clicked = 0;
@@ -99,8 +125,7 @@ int main(int, char**)
 #endif
     {
         SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
+        while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL2_ProcessEvent(&event); // Traitez les événements SDL ici
             if (event.type == SDL_QUIT)
                 done = true;
@@ -108,8 +133,7 @@ int main(int, char**)
                 done = true;
         }
 
-        if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
-        {
+        if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
             SDL_Delay(10);
             continue;
         }
@@ -120,14 +144,11 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // Main GUI code
-        if (my_tool_active)
-        {
+        if (my_tool_active) {
             ImGui::Begin("Linear Signal Color Tools", &my_tool_active);
 
-            if (ImGui::BeginMenuBar())
-            {
-                if (ImGui::BeginMenu("Analyseur Réseau"))
-                {
+            if (ImGui::BeginMenuBar()) {
+                if (ImGui::BeginMenu("Analyseur Réseau")) {
                     if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
                     if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
                     if (ImGui::MenuItem("Close", "Ctrl+W")) { my_tool_active = false; }
@@ -152,77 +173,75 @@ int main(int, char**)
                 samples_3[n] = cos(n * 0.3f + ImGui::GetTime() * 1.5f);
             ImGui::PlotLines("Test de 10", samples_3, 10);
 
+            if (ImGui::Button("Open check box tool")) {
+                my_tool = true;
+            }
             ImGui::End();
         }
 
-        if (my_tool)
-        {
+        if (my_tool) {
             ImGui::Begin("Linear Signal Color Tools", &my_tool);
 
             const char* items[] = { "Option A", "Option B", "Option C" };
             static bool selected_items[IM_ARRAYSIZE(items)] = { false, false, false }; // Checkboxes for each item
 
-            for (int i = 0; i < IM_ARRAYSIZE(items); i++)
-            {
+            for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
                 ImGui::Checkbox(items[i], &selected_items[i]); // Show the checkbox
 
-                if (selected_items[i])
-                {
+                if (selected_items[i]) {
                     ImGui::SameLine();
-                    if (ImGui::Button("Désélectionner"))
-                    {
+                    if (ImGui::Button("Désélectionner")) {
                         selected_items[i] = false; // Deselect the checkbox
                     }
                 }
             }
 
+            // Ajout du bouton pour afficher/masquer l'image
+            if (ImGui::Button("Toggle Image")) {
+                show_image = !show_image; // Inverser l'état d'affichage de l'image
+            }
+
+            // Afficher l'image si show_image est vrai
+            if (show_image && texture_id) {
+                ImGui::Text("Image:");
+                ImGui::Image((void*)(intptr_t)texture_id, ImVec2(image_width, image_height)); // Afficher la texture
+            }
+
             if (ImGui::Button("Close Window"))
                 clicked++;
 
-            if (clicked & 1)
-            {
+            if (clicked & 1) {
                 ImGui::SameLine();
                 ImGui::OpenPopup("Delete?");
-                
+                clicked = 0;
             }
-            
-            if (ImGui::BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-            {
-                ImGui::Text("You are going to close the window ! Are you sure ? ");
-                ImGui::Separator();
 
-                //static int unused_i =
-                //ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
+            if (ImGui::BeginPopupModal("Delete?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("You are going to close the window! Are you sure?");
+                ImGui::Separator();
 
                 static bool dont_ask_me_next_time = false;
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
                 ImGui::Checkbox("Don't ask me next time", &dont_ask_me_next_time);
                 ImGui::PopStyleVar();
 
-                if (ImGui::Button("OK", ImVec2(120, 0))) 
-                { 
+                if (ImGui::Button("OK", ImVec2(120, 0))) {
                     ImGui::Text("Merci d'avoir utilisé mon logiciel");
                     my_tool = false;
-                    ImGui::CloseCurrentPopup(); 
-                    
+                    ImGui::CloseCurrentPopup();
                 }
                 ImGui::SetItemDefaultFocus();
                 ImGui::SameLine();
-                
-                if (ImGui::Button("Cancel", ImVec2(120, 0))) 
-                {
-                    my_tool = false;
-                    ImGui::CloseCurrentPopup(); 
-                    
 
+                if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                    my_tool = false;
+                    ImGui::CloseCurrentPopup();
                 }
-                
+
                 ImGui::EndPopup();
             }
             ImGui::End();
         }
-
-        
 
         // Rendering
         ImGui::Render();
