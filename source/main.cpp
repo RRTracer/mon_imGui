@@ -111,6 +111,12 @@ int main(int, char**) {
     int image_height = 0;       // Hauteur de l'image
     GLuint texture_id = create_texture(image_path, &image_width, &image_height); // Créer une texture à partir de l'image
     bool show_image = false; // Contrôle pour afficher l'image
+    // Variable de gestion taille de l'image
+    int Largeurfenetre, Hauteurfenetre;
+    SDL_GetWindowSize(window, &Largeurfenetre, &Hauteurfenetre);
+    float taillemaxhauteur = static_cast<float>(Hauteurfenetre);
+    float taillemaxlargeur = static_cast<float>(Largeurfenetre);
+    float largeur, hauteur;
 
     // Variables for resource usage
     int clicked = 0;
@@ -200,11 +206,13 @@ int main(int, char**) {
             if (ImGui::Button("Toggle Image")) {
                 show_image = !show_image; // Inverser l'état d'affichage de l'image
             }
+            ImGui::SliderFloat("Largeur", &largeur, 0.0f, taillemaxlargeur);
+            ImGui::SliderFloat("Hauteur", &hauteur, 0.0f, taillemaxhauteur);
 
             // Afficher l'image si show_image est vrai
             if (show_image && texture_id) {
                 ImGui::Text("Image:");
-                ImGui::Image((void*)(intptr_t)texture_id, ImVec2(image_width, image_height)); // Afficher la texture
+                ImGui::Image((void*)(intptr_t)texture_id, ImVec2(largeur, hauteur)); // Afficher la texture
             }
 
             if (ImGui::Button("Close Window"))
