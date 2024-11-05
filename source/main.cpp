@@ -19,9 +19,9 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
-// Function to create texture
+// fonction charger une image en OpenGL texture avec des settings commune
 GLuint create_texture(const char* image_path, int* width, int* height) {
-    unsigned char* data = stbi_load(image_path, width, height, nullptr, 4); // Charge l'image avec alpha
+    unsigned char* data = stbi_load(image_path, width, height, nullptr, 4); // correspond avec 
     if (!data) {
         printf("Failed to load texture: %s\n", stbi_failure_reason());
         return 0;

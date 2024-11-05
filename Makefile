@@ -17,5 +17,5 @@ $(EXECUTABLE): $(OBJECTS)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-clean:
+clear:
 	rm -rf $(OBJ_DIR)/*.o $(EXECUTABLE)
