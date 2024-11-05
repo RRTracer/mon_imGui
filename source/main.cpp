@@ -242,7 +242,7 @@ int main(int, char**) {
                 ImGui::SameLine();
 
                 if (ImGui::Button("Cancel", ImVec2(120, 0))) {
-                    my_tool = false;
+                    my_tool = true;
                     ImGui::CloseCurrentPopup();
                 }
 
