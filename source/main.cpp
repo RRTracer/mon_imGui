@@ -1,5 +1,12 @@
 // Dear ImGui: standalone example application for SDL2 + OpenGL
 // (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
+//--------------------------------------------------------------------------------------//
+//              Code fait par RRTracer sur la base du example de Dear ImGui de
+//                  ocurnut
+//          Merci de mettre mon nom si vous utilsier les outils que j'ai develloper  
+//  
+//          Projet : Realiser un projet ImGui afin d'apprendre à utiliser cette LIB
+//--------------------------------------------------------------------------------------//
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
@@ -106,6 +113,8 @@ int main(int, char**) {
     // Tool activation flags
     bool my_tool_active = true;
     bool my_tool = true;
+    bool my_webcam = true;
+
     const char* image_path = "chat.jpeg"; // Chemin vers votre image
     int image_width = 0;        // Largeur de l'image
     int image_height = 0;       // Hauteur de l'image
@@ -117,7 +126,82 @@ int main(int, char**) {
     float taillemaxhauteur = static_cast<float>(Hauteurfenetre);
     float taillemaxlargeur = static_cast<float>(Largeurfenetre);
     float largeur, hauteur;
+// -----------------------------------------------------------------------------------------------------/
+//  ajout des variables necessaire pour la webcam de Bachard
+// -----------------------------------------------------------------------------------------------------/
+    
+    
+    // Application background when no capture device is active
+    const cv::Mat backgroundImage = cv::imread( BACKGROUND_IMAGE );
+    const cv::Mat playgroundImage = cv::imread( HANDBALL_PLAYGROUND_IMAGE );
+    // GUI class / private
+    // (TODO) rather use " ImVector <GLuint> backgroundTextureID "
+    GLuint backgroundTextureId = 0;
+    GLuint backgroundTextureId2 = 0;
+    GLuint backgroundTextureId3 = 0;
+    GLuint backgroundTextureId4 = 0;
 
+    // Application::images_source
+
+    // Choix source d'enregistrement, valeur par défaut
+    static int current_source = USB_WEBCAM;
+
+    static int old_source = current_source;
+
+    // CaptureDev parameters (input)
+    static int image_format = DEFAULT_IMAGE_FORMAT; // IMAGE_FORMAT_720P
+    static int old_image_format = image_format;
+    static char defaultPath[PATH_MAX];
+
+    // Idea : no longer depend of the webcam when launching the application
+    static bool b_use_USB_webcam = false;
+
+    static bool b_video_running = false;
+    static bool b_playing_at_fps = false;
+
+    VideoState * is = 0;
+    AVPacket  flush_pkt;
+    SDL_AudioDeviceID audio_dev;
+    double incr = 0.0f;
+    double video_duration = 0.0f;
+    static double origin = 0.0f;
+    static double max_position = origin + video_duration;
+
+    const float kSysDefaultDpi = 96.0f;
+
+    static float position = 0.0f;
+
+    // 60 fps doesn't work. Clash with ImGui value ?
+    const int SCREEN_FPS = 61;
+    const int SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
+
+
+// -----------------------------------------------------------------------------------------------------/
+// Fin des variables 
+// -----------------------------------------------------------------------------------------------------/
+
+// ------------------------------------------------------------------------------------------------------/
+// ajout du if de  glConvertMat de bachard 
+// ------------------------------------------------------------------------------------------------------/
+
+if (!displayed_frame.empty())
+        {
+            // Application::convertMatToTexture()
+            if ( ((b_lostWebcam) || (b_paused)) && (!b_full_video_selected) )
+                backgroundTextureId = glConvertMatToTexture(backgroundImage);
+            else
+                backgroundTextureId = glConvertMatToTexture(displayed_frame);
+
+            if (!displayed_frame.empty())
+                displayed_frame.release();
+        }
+        else
+            backgroundTextureId = glConvertMatToTexture(backgroundImage);
+
+        displayed_frame.release();
+// ------------------------------------------------------------------------------------------------------/
+// Fin du if pour glConvertMat
+// ------------------------------------------------------------------------------------------------------/
     // Variables for resource usage
     int clicked = 0;
 
@@ -184,7 +268,60 @@ int main(int, char**) {
             }
             ImGui::End();
         }
+        if (my_webcam){
+            // DEBUT Activer la webcam
+                /* Choix de la webcam si source == webcam */
+                const char * webcam_names[] = { WEBCAM1, WEBCAM2, WEBCAM3 };
 
+                /* Choix taille de l'image en pixels */
+                // CaptureDev parameters (input)
+                static int capture_dev = DEFAULT_DEVICE_NUMBER;
+                static int old_capture_dev = DEFAULT_DEVICE_NUMBER;
+
+                if ((current_source == USB_WEBCAM)&&(!b_recording_video))
+                {
+                    ImGui::Checkbox(ACTIVATE_THE_USB_WEBCAM"###2", &b_use_USB_webcam);
+                }
+                else if ((current_source == IP_WEBCAM)||(current_source == NETWORK))
+                {
+                    b_full_video_selected = true; // do not delay what is displayed
+                    b_cell_phone_selected = false;
+
+                    // TESTED WORKING using vlc : http://camera1.mairie-brest.fr/mjpg/video.mjpg?resolution=320x240
+                    //                            rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov
+                    //     https://streams.videolan.org/samples/Matroska/
+                    //                    static char flux_reseau[128] = "http://88.53.197.250:80/axis-cgi/mjpg/video.cgi?resolution=320x240";
+
+                    static char flux_reseau[512] = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov";
+                    char buf_flux_reseau[1024]; sprintf(buf_flux_reseau, STREAM_URL"##01", flux_reseau); // ### operator override ID ignoring the preceeding label
+
+                    ImGui::PushID(NETWORK_STREAM);
+                    ImGui::Button(buf_flux_reseau);
+
+                    if (ImGui::BeginPopupContextItem(NETWORK_STREAM))
+                    {
+                        ImGui::Text(ENTER_URL);
+                        ImGui::InputText("##insert", flux_reseau, IM_ARRAYSIZE(flux_reseau));
+                        if (ImGui::Button(OK_BUTTON2"##2"))
+                        {
+                            std::cout << ENTERED_WEBCAM_IP_VALUE <<  flux_reseau << "\n";
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::EndPopup();
+                    }
+                    ImGui::PopID();
+
+                    if (!b_video_running)
+                    {
+                        if (ImGui::Button(START_THE_DIFFUSION_BUTTON))
+                        {
+                            resetImageSource(pCap2, IP_WEBCAM, flux_reseau, 0, outWidth, outHeight, DEFAULT_FRAMERATE);
+                            LoadFile(flux_reseau, IP_WEBCAM);
+                        }
+
+
+
+        }
         if (my_tool) {
             ImGui::Begin("Linear Signal Color Tools", &my_tool);
 
